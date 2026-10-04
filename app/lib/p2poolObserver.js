@@ -63,6 +63,15 @@ async function getMinerInfo(mode, address) {
   );
 }
 
+// Most recent shares this address found on the sidechain (newest first), so
+// the share log can show history from before this dashboard tracked any.
+async function getShares(mode, address, limit = 50) {
+  const host = hostFor(mode);
+  return cached(`shares:${host}:${address}:${limit}`, () =>
+    fetchJson(`https://${host}/api/shares?miner=${encodeURIComponent(address)}&limit=${limit}`)
+  );
+}
+
 function explorerUrlFor(mode, address) {
   const host = hostFor(mode);
   return address ? `https://${host}/miner/${encodeURIComponent(address)}` : `https://${host}/`;
@@ -71,5 +80,6 @@ function explorerUrlFor(mode, address) {
 module.exports = {
   getPoolInfo,
   getMinerInfo,
+  getShares,
   explorerUrlFor,
 };

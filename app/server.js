@@ -60,7 +60,7 @@ const PORT = process.env.PORT || 3000;
 // hardcoded string baked into the HTML and got left on "Alpha-9" through
 // this entire Alpha-10 release since nothing pointed back at it as a step to
 // update. Bump this, not the HTML, on every release.
-const APP_VERSION = 'v1.2-RC2';
+const APP_VERSION = 'v1.2-RC3';
 
 // Sync-speed-derived ETA for the Overview tab's blockchain cards - neither
 // monerod nor minotari_node's RPC exposes an ETA directly, so this tracks
@@ -515,8 +515,33 @@ app.get('/api/blocks', (req, res) => {
   res.json({ blocks: list, explorerBaseUrl: EXPLORER_BASE_URL });
 });
 
-app.get('/api/shares', (req, res) => {
-  res.json({ shares: blocks.getShares(), lifetime: blocks.getLifetimeShares() });
+app.get('/api/shares', async (req, res) => {
+  const local = blocks.getShares();
+  let shares = local;
+  // With the Observer enabled, fill in older history (shares found before
+  // this dashboard started logging) from p2pool.observer. Local entries win
+  // on a sidechain-height match since they carry worker + effort.
+  const settings = config.readSettings();
+  if (settings.observerEnabled && settings.walletAddress) {
+    try {
+      const mode = settings.poolMode || 'standard';
+      const remote = await p2poolObserver.getShares(mode, settings.walletAddress, 50);
+      const seen = new Set(local.map((s) => s.sidechainHeight));
+      const extra = (Array.isArray(remote) ? remote : [])
+        .filter((r) => r && !seen.has(r.side_height))
+        .map((r) => ({
+          detectedAt: r.timestamp ? r.timestamp * 1000 : null,
+          name: null,
+          difficulty: r.difficulty ?? null,
+          sidechainHeight: r.side_height ?? null,
+          effort: null,
+        }));
+      shares = local.concat(extra).sort((a, b) => (b.detectedAt || 0) - (a.detectedAt || 0));
+    } catch (err) {
+      // Observer is best-effort; fall back to the local log.
+    }
+  }
+  res.json({ shares, lifetime: blocks.getLifetimeShares() });
 });
 
 // ---------------------------------------------------------------------------
