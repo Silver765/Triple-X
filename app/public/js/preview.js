@@ -503,7 +503,7 @@ async function refreshAll() {
   setText('pv-miner-url-lan', pool.minerConfig?.lanUrl || '—');
   setText('pv-miner-url-wan', pool.minerConfig?.wanUrl || 'Not yet detected');
   setText('pv-payout-address', settings.walletAddress || 'Not configured');
-  setText('pv-worker-login', pool.minerConfig?.exampleWorkerLogin || 'Set a payout address in Settings first');
+  setText('pv-worker-login', pool.minerConfig?.exampleWorkerLogin || 'worker-name');
 
   const historySamples = poolHistoryData?.samples || [];
   renderHistoryChart(

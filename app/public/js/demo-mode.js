@@ -233,7 +233,7 @@
         minerConfig: {
           url: `${url.hostname}:3333`,
           payoutAddress: DEMO_XMR_ADDRESS,
-          exampleWorkerLogin: `${DEMO_XMR_ADDRESS}.worker-name`,
+          exampleWorkerLogin: 'worker-name',
           instructions: [
             'Point your miner (e.g. XMRig) at the URL above.',
             'Use any username you like to identify this worker - it is not checked or validated.',

@@ -60,7 +60,7 @@ const PORT = process.env.PORT || 3000;
 // hardcoded string baked into the HTML and got left on "Alpha-9" through
 // this entire Alpha-10 release since nothing pointed back at it as a step to
 // update. Bump this, not the HTML, on every release.
-const APP_VERSION = 'v1.2-RC3';
+const APP_VERSION = 'v1.2-RC4';
 
 // Sync-speed-derived ETA for the Overview tab's blockchain cards - neither
 // monerod nor minotari_node's RPC exposes an ETA directly, so this tracks
@@ -464,7 +464,7 @@ app.get('/api/pool', async (req, res) => {
       payoutAddress: settings.walletAddress || null,
       // Example worker login, so the Miner Configuration card can show a
       // ready-to-copy value instead of just prose describing the format.
-      exampleWorkerLogin: settings.walletAddress ? `${settings.walletAddress}.worker-name` : null,
+      exampleWorkerLogin: 'worker-name',
       instructions: [
         'Point your miner (e.g. XMRig) at the URL above.',
         'Use any username you like to identify this worker - it is not checked or validated.',
