@@ -90,6 +90,11 @@ let state = {
   lifetimeShares: null,
 };
 const SYNC_GRACE_MS = 10 * 60 * 1000;
+// Before p2pool has synced it works on its own empty local chain: "SHARE
+// FOUND" lines then show sidechain heights 0-3 at the minimum difficulty
+// (100K). They never reach the real sidechain (heights are in the millions),
+// so anything below this is not a real share.
+const MIN_REAL_SIDECHAIN_HEIGHT = 1000;
 
 function logTime(ts) {
   const t = Date.parse(String(ts).replace(' ', 'T'));
@@ -100,6 +105,15 @@ async function loadState() {
   try {
     const raw = await fsp.readFile(STATE_FILE, 'utf8');
     state = { ...state, ...JSON.parse(raw) };
+    // Drop bogus bootstrap-chain shares recorded by earlier versions.
+    const before = (state.shares || []).length;
+    const real = (state.shares || []).filter(
+      (sh) => sh.sidechainHeight == null || sh.sidechainHeight >= MIN_REAL_SIDECHAIN_HEIGHT
+    );
+    if (real.length !== before) {
+      state.lifetimeShares = Math.max(0, (state.lifetimeShares ?? before) - (before - real.length));
+      state.shares = real;
+    }
   } catch (err) {
     if (err.code !== 'ENOENT') {
       console.error('[blocks] failed to load state:', err.message);
@@ -177,6 +191,8 @@ function parseLine(line) {
   }
 
   if (/SHARE FOUND/i.test(line)) {
+    const lineHeight = line.match(SHARE_SIDECHAIN_HEIGHT_RE);
+    if (lineHeight && Number(lineHeight[1]) < MIN_REAL_SIDECHAIN_HEIGHT) return;
     if (state.syncingSince) {
       const since = logTime(state.syncingSince);
       const now = logTime(detectedAt);
