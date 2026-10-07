@@ -556,7 +556,7 @@ async function refreshAll() {
 
   // Lifetime tile: prefer p2pool.observer's count when enabled (it covers
   // shares from before this dashboard tracked them), else our own counter.
-  const obs = pool.observer && !pool.observer.error ? pool.observer : null;
+  const obs = pool.observer && pool.observer.connected ? pool.observer : null;
   const obsTotal = obs?.yourShares?.totalShares;
   if (obsTotal != null) {
     setText('pv-lifetime-shares', fmtDifficulty(obsTotal));
@@ -686,10 +686,18 @@ async function refreshAll() {
   const observerCard = document.getElementById('pv-observer-card');
   if (observerCard) {
     const observer = pool.observer;
-    const showObserver = !!(observer && !observer.error);
-    observerCard.style.display = showObserver ? '' : 'none';
-    if (showObserver) {
-      setText('pv-observer-versions', `P2Pool ${observer.p2poolVersion || '—'} · Monero ${observer.moneroVersion || '—'}`);
+    // Shown whenever Observer is enabled (pool.observer is null otherwise) so
+    // the link and connection status stay visible even if a lookup fails.
+    observerCard.style.display = observer ? '' : 'none';
+    if (observer) {
+      const status = observer.error
+        ? `Observer unreachable (${observer.error})`
+        : observer.minerError
+          ? `Connected, but your address lookup failed (${observer.minerError})`
+          : observer.minerNotFound
+            ? 'Connected, no shares from your address on this sidechain yet'
+            : 'Connected';
+      setText('pv-observer-versions', `${status} · P2Pool ${observer.p2poolVersion || '—'} · Monero ${observer.moneroVersion || '—'}`);
       const link = document.getElementById('pv-observer-link');
       if (link) link.href = observer.explorerUrl || '#';
     }

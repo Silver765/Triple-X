@@ -1,6 +1,6 @@
 # Triple X
 
-**Status: Release Candidate (`v1.2-RC4`).** Feature-complete and past the
+**Status: Release Candidate (`v1.2-RC5`).** Feature-complete and past the
 `v1.0-AlphaN` builds, but still a release candidate — expect the odd rough
 edge. The on-screen version badge always shows exactly what's running.
 `v1.0-Alpha16` was the last build confirmed stable on a live 5tratumOS

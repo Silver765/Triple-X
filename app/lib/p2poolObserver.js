@@ -11,7 +11,7 @@
 //   GET https://<subdomain>/api/pool_info                - network-wide stats
 //   GET https://<subdomain>/api/miner_info/<address>      - one miner's lifetime shares
 
-const TIMEOUT_MS = 6000;
+const TIMEOUT_MS = 12000;
 const CACHE_MS = 60000; // be polite to a free, donation-funded public service
 
 const SUBDOMAIN_BY_MODE = {

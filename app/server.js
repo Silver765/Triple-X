@@ -60,7 +60,7 @@ const PORT = process.env.PORT || 3000;
 // hardcoded string baked into the HTML and got left on "Alpha-9" through
 // this entire Alpha-10 release since nothing pointed back at it as a step to
 // update. Bump this, not the HTML, on every release.
-const APP_VERSION = 'v1.2-RC4';
+const APP_VERSION = 'v1.2-RC5';
 
 // Sync-speed-derived ETA for the Overview tab's blockchain cards - neither
 // monerod nor minotari_node's RPC exposes an ETA directly, so this tracks
@@ -306,29 +306,36 @@ app.get('/api/pool', async (req, res) => {
   // third party over clearnet.
   let observer = null;
   if (settings.observerEnabled) {
-    try {
-      const [poolInfo, minerInfo] = await Promise.all([
-        p2poolObserver.getPoolInfo(requestedMode),
-        settings.walletAddress ? p2poolObserver.getMinerInfo(requestedMode, settings.walletAddress) : null,
-      ]);
-      observer = {
-        globalMiners: poolInfo?.sidechain?.miners ?? null,
-        p2poolVersion: poolInfo?.versions?.p2pool?.version ?? null,
-        moneroVersion: poolInfo?.versions?.monero?.version ?? null,
-        yourShares: minerInfo
-          ? {
-              lastShareHeight: minerInfo.last_share_height ?? null,
-              lastShareAt: minerInfo.last_share_timestamp ? minerInfo.last_share_timestamp * 1000 : null,
-              totalShares: Array.isArray(minerInfo.shares)
-                ? minerInfo.shares.reduce((sum, s) => sum + (s.shares || 0), 0)
-                : null,
-            }
-          : null,
-        explorerUrl: p2poolObserver.explorerUrlFor(requestedMode, settings.walletAddress),
-      };
-    } catch (err) {
-      observer = { error: err.message };
-    }
+    // The two lookups fail independently: a miner 404 just means this address
+    // has no shares on this sidechain yet (or the big sidechain's lookup timed
+    // out) - that must not hide the footer/link or mark Observer as down.
+    const explorerUrl = p2poolObserver.explorerUrlFor(requestedMode, settings.walletAddress);
+    const [poolRes, minerRes] = await Promise.allSettled([
+      p2poolObserver.getPoolInfo(requestedMode),
+      settings.walletAddress ? p2poolObserver.getMinerInfo(requestedMode, settings.walletAddress) : Promise.resolve(null),
+    ]);
+    const poolInfo = poolRes.status === 'fulfilled' ? poolRes.value : null;
+    const minerInfo = minerRes.status === 'fulfilled' ? minerRes.value : null;
+    const minerNotFound = minerRes.status === 'rejected' && /HTTP 404/.test(minerRes.reason?.message || '');
+    observer = {
+      connected: poolRes.status === 'fulfilled',
+      error: poolRes.status === 'rejected' ? poolRes.reason?.message || 'unreachable' : null,
+      minerError: minerRes.status === 'rejected' && !minerNotFound ? minerRes.reason?.message || 'lookup failed' : null,
+      minerNotFound,
+      globalMiners: poolInfo?.sidechain?.miners ?? null,
+      p2poolVersion: poolInfo?.versions?.p2pool?.version ?? null,
+      moneroVersion: poolInfo?.versions?.monero?.version ?? null,
+      yourShares: minerInfo
+        ? {
+            lastShareHeight: minerInfo.last_share_height ?? null,
+            lastShareAt: minerInfo.last_share_timestamp ? minerInfo.last_share_timestamp * 1000 : null,
+            totalShares: Array.isArray(minerInfo.shares)
+              ? minerInfo.shares.reduce((sum, s) => sum + (s.shares || 0), 0)
+              : null,
+          }
+        : null,
+      explorerUrl,
+    };
   }
 
   res.json({
