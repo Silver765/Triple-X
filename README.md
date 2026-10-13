@@ -26,6 +26,18 @@ P2Pool directly.
 | **Logs** | Live tail of the P2Pool log, optional per Settings. |
 | **Settings** | Payout addresses, P2Pool mode (Standard / Mini / Nano, with a built-in "Which Pool Type Should I Use?" advisor), Discord webhook notifications, memory-usage tuning, and blockchain import — organized into collapsible sections so the tab stays short. Saving hot-restarts P2Pool with the new settings within ~10 seconds — no need to touch Docker. |
 
+## Linux install (Ubuntu / Debian)
+
+A one-command installer for plain Linux machines lives in [`linux/`](linux/README.md):
+
+```bash
+git clone https://github.com/Silver765/Triple-X.git
+cd Triple-X/linux
+sudo ./triple-x.sh install
+```
+
+It installs Docker if needed, starts the prebuilt images and gives you a `triple-x` command (`status`, `logs`, `update`, `uninstall`). See [`linux/README.md`](linux/README.md).
+
 ## Recent additions
 
 - **v1.0-Alpha16 confirmed stable: fixed recurring "degraded" status** —
